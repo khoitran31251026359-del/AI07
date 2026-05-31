@@ -1,0 +1,140 @@
+from google.colab import drive
+drive.mount('/content/drive')
+-----------------------
+Drive already mounted at /content/drive; to attempt to forcibly remount, call drive.mount("/content/drive", force_remount=True).
+-----------------------
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+
+# 1. TIỀN XỬ LÝ DỮ LIỆU
+# Thiết lập đường dẫn dữ liệu
+train_dir = "/content/drive/MyDrive/Ảnh selfie cho chiều t2 18 5"
+
+# Kích thước ảnh và kích thước lô
+img_width, img_height = 128, 128
+batch_size = 32
+
+# Tăng cường dữ liệu dành cho huấn luyện mô hình
+train_datagen = ImageDataGenerator(
+    rescale=1.0/255,  # Normalize pixel values
+    rotation_range=30,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode="nearest"
+)
+
+# Tải dữ liệu huấn luyện
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(img_width, img_height),
+    batch_size=batch_size,
+    class_mode="categorical"
+)
+-----------------------
+Found 2307 images belonging to 39 classes.
+-----------------------
+# XÂY DỰNG MÔ HÌNH CNN
+model = Sequential([
+    Conv2D(32, (3,3), activation="relu", input_shape=(img_width, img_height, 3)),
+    MaxPooling2D(2,2),
+    Conv2D(64, (3,3), activation="relu"),
+    MaxPooling2D(2,2),
+    Conv2D(128, (3,3), activation="relu"),
+    MaxPooling2D(2,2),
+    Flatten(),
+    Dense(128, activation="relu"),
+    Dropout(0.5), # Reduce overfitting
+    Dense(39, activation="softmax") # 5 categories
+])
+
+model.compile(optimizer="adam",
+              loss="categorical_crossentropy",
+              metrics=["accuracy"])
+model.summary()
+-----------------------
+ Model: "sequential_1"
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ conv2d_3 (Conv2D)               │ (None, 126, 126, 32)   │           896 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_3 (MaxPooling2D)  │ (None, 63, 63, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_4 (Conv2D)               │ (None, 61, 61, 64)     │        18,496 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_4 (MaxPooling2D)  │ (None, 30, 30, 64)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_5 (Conv2D)               │ (None, 28, 28, 128)    │        73,856 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_5 (MaxPooling2D)  │ (None, 14, 14, 128)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten_1 (Flatten)             │ (None, 25088)          │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_2 (Dense)                 │ (None, 128)            │     3,211,392 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_1 (Dropout)             │ (None, 128)            │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_3 (Dense)                 │ (None, 39)             │         5,031 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+
+ Total params: 3,309,671 (12.63 MB)
+
+ Trainable params: 3,309,671 (12.63 MB)
+
+ Non-trainable params: 0 (0.00 B)
+-----------------------
+epochs = 10
+history = model.fit(train_generator, epochs=epochs)
+-----------------------
+Epoch 1/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 1380s 19s/step - accuracy: 0.0624 - loss: 3.5816
+Epoch 2/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 89s 1s/step - accuracy: 0.1638 - loss: 3.1311
+Epoch 3/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 89s 1s/step - accuracy: 0.2757 - loss: 2.6547
+Epoch 4/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 90s 1s/step - accuracy: 0.3715 - loss: 2.3257
+Epoch 5/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 88s 1s/step - accuracy: 0.4469 - loss: 2.0332
+Epoch 6/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 89s 1s/step - accuracy: 0.5128 - loss: 1.7723
+Epoch 7/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 90s 1s/step - accuracy: 0.5609 - loss: 1.5909
+Epoch 8/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 91s 1s/step - accuracy: 0.6103 - loss: 1.4472
+Epoch 9/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 139s 1s/step - accuracy: 0.6476 - loss: 1.3053
+Epoch 10/10
+73/73 ━━━━━━━━━━━━━━━━━━━━ 89s 1s/step - accuracy: 0.6671 - loss: 1.2080
+-----------------------
+plt.plot(history.history['accuracy'], label="Kết quả huấn luyện")
+if 'val_accuracy' in history.history:
+    plt.plot(history.history['val_accuracy'], label="Độ chính xác xác thực")
+plt.xlabel("Số lần học")
+plt.ylabel("Độ chính xác")
+plt.legend()
+plt.show()
+
+from keras.utils import load_img
+import numpy as np
+path = "/content/tui.jpg"
+img = loadSS_img(path, target_size=(128, 128))
+plt.imshow(img)
+plt.show()
+img = np.array(img)
+img = img / 255.0
+img = img.reshape(1, 128, 128, 3)
+prediction = np.argmax(model.predict(img))
+class_labels = {v: k for k, v in train_generator.class_indices.items()}
+person_name = class_labels[prediction]
+print(f"Người tiên đoán: {person_name}")
+-----------------------
+ 1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 51ms/step
+Người tiên đoán: Trần Anh Khôi - selfie 
+-----------------------
