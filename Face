@@ -124,7 +124,7 @@ plt.show()
 from keras.utils import load_img
 import numpy as np
 path = "/content/tui.jpg"
-img = loadSS_img(path, target_size=(128, 128))
+img = load_img(path, target_size=(128, 128))
 plt.imshow(img)
 plt.show()
 img = np.array(img)
